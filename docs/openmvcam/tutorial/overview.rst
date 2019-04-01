@@ -1,8 +1,8 @@
 Overview
 ========
 
-.. image:: ../camera.jpg
-    :alt: OpenMV Cam
+.. image:: ../pinout.png
+    :alt: OpenMV Cam pinout
     :width: 700px
 
 Hi, thanks for reading this tutorial and being interested in the OpenMV Cam! Before
