@@ -195,6 +195,7 @@ extern const struct _mp_obj_module_t gif_module;
 extern const struct _mp_obj_module_t mjpeg_module;
 extern const struct _mp_obj_module_t cpufreq_module;
 extern const struct _mp_obj_module_t nn_module;
+extern const struct _mp_obj_module_t tf_module;
 extern const struct _mp_obj_module_t tv_module;
 
 #if MICROPY_PY_STM
@@ -233,6 +234,7 @@ extern const struct _mp_obj_module_t tv_module;
     { MP_OBJ_NEW_QSTR(MP_QSTR_mjpeg),   (mp_obj_t)&mjpeg_module }, \
     { MP_OBJ_NEW_QSTR(MP_QSTR_cpufreq), (mp_obj_t)&cpufreq_module }, \
     { MP_OBJ_NEW_QSTR(MP_QSTR_nn),      (mp_obj_t)&nn_module }, \
+    { MP_OBJ_NEW_QSTR(MP_QSTR_tf),      (mp_obj_t)&tf_module }, \
     { MP_OBJ_NEW_QSTR(MP_QSTR_tv),      (mp_obj_t)&tv_module }, \
     SOCKET_BUILTIN_MODULE \
     NETWORK_BUILTIN_MODULE \
