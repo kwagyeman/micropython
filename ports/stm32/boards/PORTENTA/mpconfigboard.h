@@ -143,7 +143,7 @@ void PORTENTA_board_low_power(int mode);
 #define GPIO_AF10_OTG_HS            (GPIO_AF10_OTG2_HS)
 
 // SDRAM
-#define MICROPY_HW_SDRAM_SIZE               (64 / 8 * 1024 * 1024)  // 64 Mbit
+#define MICROPY_HW_SDRAM_SIZE               (8 * 1024 * 1024)
 #define MICROPY_HW_SDRAM_STARTUP_TEST       (1)
 #define MICROPY_HW_SDRAM_TEST_EXHAUSTIVE    (false)
 
@@ -154,15 +154,16 @@ void PORTENTA_board_low_power(int mode);
 #define MICROPY_HW_SDRAM_TIMING_TMRD        (2)
 #define MICROPY_HW_SDRAM_TIMING_TXSR        (7)
 #define MICROPY_HW_SDRAM_TIMING_TRAS        (5)
-#define MICROPY_HW_SDRAM_TIMING_TRC         (7)
+#define MICROPY_HW_SDRAM_TIMING_TRC         (6)
 #define MICROPY_HW_SDRAM_TIMING_TWR         (2)
-#define MICROPY_HW_SDRAM_TIMING_TRP         (3)
-#define MICROPY_HW_SDRAM_TIMING_TRCD        (3)
+#define MICROPY_HW_SDRAM_TIMING_TRP         (2)
+#define MICROPY_HW_SDRAM_TIMING_TRCD        (2)
 
 #define MICROPY_HW_SDRAM_ROW_BITS_NUM       12
 #define MICROPY_HW_SDRAM_MEM_BUS_WIDTH      16
 #define MICROPY_HW_SDRAM_REFRESH_CYCLES     4096
 
+// AS4C4M16SA-6BIN - Industrial - 166MHz - 6ns - CAS Latency 2 - 10 ns - 100 MHz - 6 ns
 #define MICROPY_HW_SDRAM_COLUMN_BITS_NUM    8
 #define MICROPY_HW_SDRAM_INTERN_BANKS_NUM   4
 #define MICROPY_HW_SDRAM_RPIPE_DELAY        0
@@ -171,14 +172,11 @@ void PORTENTA_board_low_power(int mode);
 
 #define MICROPY_HW_SDRAM_AUTOREFRESH_NUM    (8)
 #define MICROPY_HW_SDRAM_BURST_LENGTH       1
+
 #define MICROPY_HW_SDRAM_REFRESH_RATE       (64) // ms
 
-
 #define MICROPY_HW_FMC_SDCKE0   (pin_H2)
-#define MICROPY_HW_FMC_SDNE0    (pin_H3)  // SD_CS ????
-#define MICROPY_HW_FMC_SDNBL0   (pin_E0)
-#define MICROPY_HW_FMC_SDNBL1   (pin_E1)
-//#define MICROPY_HW_FMC_SDNE1    (pin_B6)
+#define MICROPY_HW_FMC_SDNE0    (pin_H3)
 #define MICROPY_HW_FMC_SDCLK    (pin_G8)
 #define MICROPY_HW_FMC_SDNCAS   (pin_G15)
 #define MICROPY_HW_FMC_SDNRAS   (pin_F11)
