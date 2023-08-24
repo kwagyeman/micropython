@@ -134,6 +134,17 @@ extern void mimxrt_hal_bootloader(void);
     { 0 }, { 0 }, \
     { IOMUXC_GPIO_AD_B0_12_LPI2C4_SCL }, { IOMUXC_GPIO_AD_B0_13_LPI2C4_SDA },
 
+// Define the mapping hardware CAN # to logical CAN #
+// Bus      HW-CAN       Logical CAN
+// External FLEXCAN2 ->  0
+
+#define MICROPY_HW_CAN_INDEX { 2 }
+#define MICROPY_HW_NUM_CAN_IRQS (1)
+
+#define IOMUX_TABLE_CAN \
+    { 0 }, { 0 }, \
+    { IOMUXC_GPIO_AD_B0_02_FLEXCAN2_TX }, { IOMUXC_GPIO_AD_B0_03_FLEXCAN2_RX },
+
 #define MICROPY_PY_MACHINE_I2S (1)
 #define MICROPY_HW_I2S_NUM (1)
 #define I2S_CLOCK_MUX { 0, kCLOCK_Sai1Mux, kCLOCK_Sai2Mux }
