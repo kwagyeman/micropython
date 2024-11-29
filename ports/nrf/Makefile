@@ -155,8 +155,8 @@ endif
 #Debugging/Optimization
 ifeq ($(DEBUG), 1)
 #ASMFLAGS += -g -gtabs+
-CFLAGS += -g -O0
-LDFLAGS += -O0
+CFLAGS += -Og -ggdb3
+LDFLAGS += -Og
 else
 ifneq ($(LTO), 1)
 CFLAGS += -g  # always include debug info in the ELF, unless LTO is on
@@ -225,7 +225,6 @@ SRC_NRFX += $(addprefix lib/nrfx/drivers/src/,\
 	)
 
 SRC_C += \
-	main.c \
 	mphalport.c \
 	help.c \
 	gccollect.c \
@@ -314,9 +313,9 @@ $(filter $(PY_BUILD)/../extmod/vfs_fat_%.o, $(PY_O)): COPT += -Os
 .PHONY: all flash deploy sd binary hex
 
 ifeq ($(MCU_VARIANT), nrf91)
-all: binary hex secureboot
+all: $(OBJ)
 else
-all: binary hex
+all: $(OBJ)
 endif
 
 OUTPUT_FILENAME = firmware
