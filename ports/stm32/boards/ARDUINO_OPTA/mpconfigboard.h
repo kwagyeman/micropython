@@ -36,7 +36,6 @@ void OPTA_board_startup(void);
 #define MICROPY_BOARD_EARLY_INIT    OPTA_board_early_init
 void OPTA_board_early_init(void);
 
-#define MICROPY_HW_ENTER_BOOTLOADER_VIA_RESET   (0)
 #define MICROPY_BOARD_ENTER_BOOTLOADER(nargs, args) OPTA_board_enter_bootloader()
 void OPTA_board_enter_bootloader(void);
 
