@@ -147,6 +147,17 @@ extern const dma_descr_t dma_I2C_4_RX;
 extern const dma_descr_t dma_SPI_SUBGHZ_TX;
 extern const dma_descr_t dma_SPI_SUBGHZ_RX;
 
+#elif defined(STM32N6)
+
+extern const dma_descr_t dma_SPI_1_RX;
+extern const dma_descr_t dma_SPI_1_TX;
+extern const dma_descr_t dma_SPI_2_RX;
+extern const dma_descr_t dma_SPI_2_TX;
+extern const dma_descr_t dma_SPI_3_RX;
+extern const dma_descr_t dma_SPI_3_TX;
+extern const dma_descr_t dma_SPI_4_RX;
+extern const dma_descr_t dma_SPI_4_TX;
+
 #endif
 
 #if defined(STM32F7)
@@ -157,6 +168,8 @@ extern const dma_descr_t dma_SPI_SUBGHZ_RX;
 #define DMA_BUFFER(p)       ((((uint32_t)p & 3) == 0) && ((uint32_t) p > 0x10010000))
 #elif defined(STM32H7)
 #define DMA_BUFFER(p)       ((((uint32_t)p & 3) == 0) && ((uint32_t) p > 0x20020000))
+#elif defined(STM32N6)
+#define DMA_BUFFER(p)       (((uint32_t)p & 3) == 0)
 #else
 #error Unsupported processor
 #endif
@@ -188,7 +201,8 @@ void dma_nohal_start(const dma_descr_t *descr, uint32_t src_addr, uint32_t dst_a
 void dma_external_acquire(uint32_t controller, uint32_t stream);
 void dma_external_release(uint32_t controller, uint32_t stream);
 
-#if __DCACHE_PRESENT
+// TODO implement protect/unprotect for STM32N6
+#if __DCACHE_PRESENT && !defined(STM32N6)
 // On chips with D-Cache, it's necessary to call this function before using DMA to read
 // into a user-supplied buffer. It does two things:
 //
