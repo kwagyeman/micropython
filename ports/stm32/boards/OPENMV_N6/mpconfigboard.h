@@ -49,8 +49,8 @@
 #define MICROPY_HW_BDEV_SPIFLASH                (&spi_bdev)
 #define MICROPY_HW_BDEV_SPIFLASH_EXTENDED       (&spi_bdev)
 #define MICROPY_HW_BDEV_SPIFLASH_CONFIG         (&spiflash_config)
-#define MICROPY_HW_BDEV_SPIFLASH_OFFSET_BYTES   (16 * 1024 * 1024)
-#define MICROPY_HW_BDEV_SPIFLASH_SIZE_BYTES     (16 * 1024 * 1024)
+#define MICROPY_HW_BDEV_SPIFLASH_OFFSET_BYTES   (4 * 1024 * 1024)
+#define MICROPY_HW_BDEV_SPIFLASH_SIZE_BYTES     (4 * 1024 * 1024)
 #endif
 
 // UART buses
