@@ -300,7 +300,7 @@ static machine_pin_irq_obj_t *machine_pin_get_irq(machine_pin_obj_t *self) {
         irq->base.parent = MP_OBJ_FROM_PTR(self);
         irq->base.handler = mp_const_none;
         irq->base.ishard = false;
-        irq->irq_num = ((self->port > 14) ? LPGPIO_IRQ0_IRQn : GPIO0_IRQ0_IRQn) + irq_idx;
+        irq->irq_num = (self->port < 15) ? (GPIO0_IRQ0_IRQn + irq_idx) : (LPGPIO_IRQ0_IRQn + self->pin);
         irq->reserved = false;
         MP_STATE_PORT(machine_pin_irq_obj[irq_idx]) = irq;
     }
