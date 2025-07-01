@@ -43,13 +43,19 @@ typedef struct _machine_pin_irq_obj_t {
     bool reserved; // for use by other drivers
 } machine_pin_irq_obj_t;
 
+#define MACHINE_PIN_IRQ_INDEX(port, pin) \
+    ((port) * MACHINE_PIN_NUM_PORT_IO + (pin))
+
+#define MACHINE_PIN_IRQ_OBJECT(port, pin) \
+    (MP_STATE_PORT(machine_pin_irq_obj[MACHINE_PIN_IRQ_INDEX((port), (pin))]))
+
 // Defines a single GPIO IRQ handler
 #define DEFINE_GPIO_IRQ_HANDLER(pname, port, pin) \
     void pname##_IRQ##pin##Handler(void) { \
-        size_t irq_idx = port * MACHINE_PIN_NUM_PORT_IO + pin; \
-        machine_pin_irq_obj_t *irq = MP_STATE_PORT(machine_pin_irq_obj[irq_idx]); \
+        machine_pin_irq_obj_t *irq = MACHINE_PIN_IRQ_OBJECT(port, pin); \
         machine_pin_obj_t *self = MP_OBJ_TO_PTR(irq->base.parent); \
         gpio_interrupt_eoi(self->gpio, pin); \
+        irq->flags = irq->trigger; \
         mp_irq_handler(&irq->base); \
     }
 
@@ -81,7 +87,7 @@ DEFINE_GPIO_IRQ_HANDLER(GPIO9, 9, 2)
 DEFINE_GPIO_IRQ_HANDLER(GPIO9, 9, 3)
 DEFINE_GPIO_IRQ_HANDLER(GPIO9, 9, 4)
 DEFINE_GPIO_IRQ_HANDLER(GPIO9, 9, 5)
-//DEFINE_GPIO_IRQ_HANDLER(GPIO9, 9, 6)  // Reserved for WiFi
+// DEFINE_GPIO_IRQ_HANDLER(GPIO9, 9, 6)  // Reserved for WiFi
 DEFINE_GPIO_IRQ_HANDLER(GPIO9, 9, 7)
 
 DEFINE_GPIO_IRQ_HANDLERS_FOR_PORT(GPIO10, 10)
@@ -288,46 +294,33 @@ static mp_obj_t machine_pin_toggle(mp_obj_t self_in) {
 }
 static MP_DEFINE_CONST_FUN_OBJ_1(machine_pin_toggle_obj, machine_pin_toggle);
 
-static machine_pin_irq_obj_t *machine_pin_get_irq(machine_pin_obj_t *self) {
-    size_t irq_idx = self->port * MACHINE_PIN_NUM_PORT_IO + self->pin;
-    machine_pin_irq_obj_t *irq = MP_STATE_PORT(machine_pin_irq_obj[irq_idx]);
-
-    // Allocate a new IRQ object if it doesn't exist.
-    if (irq == NULL) {
-        irq = m_new_obj(machine_pin_irq_obj_t);
-        irq->base.base.type = &mp_irq_type;
-        irq->base.methods = (mp_irq_methods_t*) &machine_pin_irq_methods;
-        irq->base.parent = MP_OBJ_FROM_PTR(self);
-        irq->base.handler = mp_const_none;
-        irq->base.ishard = false;
-        irq->irq_num = (self->port < 15) ? (GPIO0_IRQ0_IRQn + irq_idx) : (LPGPIO_IRQ0_IRQn + self->pin);
-        irq->reserved = false;
-        MP_STATE_PORT(machine_pin_irq_obj[irq_idx]) = irq;
-    }
-
-    return irq;
-}
-
 static mp_uint_t machine_pin_irq_trigger(mp_obj_t self_in, mp_uint_t trigger) {
     machine_pin_obj_t *self = MP_OBJ_TO_PTR(self_in);
-    machine_pin_irq_obj_t *irq = machine_pin_get_irq(self);
+    machine_pin_irq_obj_t *irq = MACHINE_PIN_IRQ_OBJECT(self->port, self->pin);
 
     irq->flags = 0;
     irq->trigger = trigger;
 
-    if (trigger == 0) {
-        // Disable IRQs.
-        gpio_disable_interrupt(self->gpio, self->pin);
-        gpio_mask_interrupt(self->gpio, self->pin);
+    // Disable IRQs.
+    gpio_disable_interrupt(self->gpio, self->pin);
+    gpio_mask_interrupt(self->gpio, self->pin);
 
-        NVIC_ClearPendingIRQ(irq->irq_num);
-        NVIC_DisableIRQ(irq->irq_num);
+    NVIC_ClearPendingIRQ(irq->irq_num);
+    NVIC_DisableIRQ(irq->irq_num);
+
+    // Return if the trigger is disabled.
+    if (trigger == 0) {
         return 0;
     }
 
     // Clear and enable GPIO IRQ.
     gpio_enable_interrupt(self->gpio, self->pin);
     gpio_unmask_interrupt(self->gpio, self->pin);
+
+    // Clear GPIO config.
+    self->gpio->GPIO_INT_BOTHEDGE &= ~(1 << self->pin);
+    self->gpio->GPIO_INT_POLARITY &= ~(1 << self->pin);
+    self->gpio->GPIO_INTTYPE_LEVEL &= ~(1 << self->pin);
 
     // Configure GPIO IRQ trigger
     if (trigger == MP_HAL_PIN_TRIGGER_FALL) {
@@ -355,7 +348,7 @@ static mp_uint_t machine_pin_irq_trigger(mp_obj_t self_in, mp_uint_t trigger) {
 
 static mp_uint_t machine_pin_irq_info(mp_obj_t self_in, mp_uint_t info_type) {
     machine_pin_obj_t *self = MP_OBJ_TO_PTR(self_in);
-    machine_pin_irq_obj_t *irq = machine_pin_get_irq(self);
+    machine_pin_irq_obj_t *irq = MACHINE_PIN_IRQ_OBJECT(self->port, self->pin);
 
     if (info_type == MP_IRQ_INFO_FLAGS) {
         return irq->flags;
@@ -383,8 +376,24 @@ static mp_obj_t machine_pin_irq(size_t n_args, const mp_obj_t *pos_args, mp_map_
     mp_arg_val_t args[MP_ARRAY_SIZE(allowed_args)];
     mp_arg_parse_all(n_args - 1, pos_args + 1, kw_args, MP_ARRAY_SIZE(allowed_args), allowed_args, args);
 
+    machine_pin_irq_obj_t *irq = MACHINE_PIN_IRQ_OBJECT(self->port, self->pin);
+
+    // Allocate a new IRQ object if it doesn't exist.
+    if (irq == NULL) {
+        irq = m_new_obj(machine_pin_irq_obj_t);
+        uint32_t idx = MACHINE_PIN_IRQ_INDEX(self->port, self->pin);
+
+        irq->base.base.type = &mp_irq_type;
+        irq->base.methods = (mp_irq_methods_t *)&machine_pin_irq_methods;
+        irq->base.parent = MP_OBJ_FROM_PTR(self);
+        irq->base.handler = mp_const_none;
+        irq->base.ishard = false;
+        irq->reserved = false;
+        irq->irq_num = (self->port < 15) ? (GPIO0_IRQ0_IRQn + idx) : (LPGPIO_IRQ0_IRQn + self->pin);
+        MP_STATE_PORT(machine_pin_irq_obj[idx]) = irq;
+    }
+
     if (n_args > 1 || kw_args->used != 0) {
-        machine_pin_irq_obj_t *irq = machine_pin_get_irq(self);
         if (irq->reserved) {
             mp_raise_msg(&mp_type_ValueError, MP_ERROR_TEXT("Pin IRQ is reserved"));
         }
@@ -392,12 +401,13 @@ static mp_obj_t machine_pin_irq(size_t n_args, const mp_obj_t *pos_args, mp_map_
         irq->base.ishard = args[ARG_hard].u_bool;
         machine_pin_irq_trigger(self, args[ARG_trigger].u_int);
     }
-    return mp_const_none;
+
+    return MP_OBJ_FROM_PTR(irq);
 }
 static MP_DEFINE_CONST_FUN_OBJ_KW(machine_pin_irq_obj, 1, machine_pin_irq);
 
 void machine_pin_irq_deinit(void) {
-    for (size_t i=0; i<MP_ARRAY_SIZE(MP_STATE_PORT(machine_pin_irq_obj)); i++) {
+    for (size_t i = 0; i < MP_ARRAY_SIZE(MP_STATE_PORT(machine_pin_irq_obj)); i++) {
         machine_pin_irq_obj_t *irq = MP_STATE_PORT(machine_pin_irq_obj[i]);
         if (irq != NULL) {
             machine_pin_obj_t *self = MP_OBJ_TO_PTR(irq->base.parent);
@@ -482,4 +492,4 @@ mp_hal_pin_obj_t mp_hal_get_pin_obj(mp_obj_t obj) {
     return machine_pin_find(obj);
 }
 
-MP_REGISTER_ROOT_POINTER(void* machine_pin_irq_obj[MACHINE_PIN_NUM_VECTORS]);
+MP_REGISTER_ROOT_POINTER(void *machine_pin_irq_obj[MACHINE_PIN_NUM_VECTORS]);
