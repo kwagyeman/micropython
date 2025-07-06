@@ -21,8 +21,8 @@ extern void mimxrt_hal_bootloader(void);
 #define MICROPY_PY_MACHINE_CAN      (1)
 
 #define MICROPY_HW_USB_MSC          (1)
-#define MICROPY_HW_USB_VID          0x1209
-#define MICROPY_HW_USB_PID          0xabd1
+#define MICROPY_HW_USB_VID          0x37c5
+#define MICROPY_HW_USB_PID          0x1060
 
 #define MICROPY_HW_LED1_PIN         (pin_GPIO_B0_10)
 #define MICROPY_HW_LED2_PIN         (pin_GPIO_B0_11)
