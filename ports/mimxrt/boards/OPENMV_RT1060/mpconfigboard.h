@@ -242,3 +242,8 @@ extern void mimxrt_hal_bootloader(void);
     { IOMUXC_GPIO_B1_11_ENET_RX_ER, 0, 0xB0E9u }, \
     { IOMUXC_GPIO_EMC_41_ENET_MDIO, 0, 0xB0E9u }, \
     { IOMUXC_GPIO_EMC_40_ENET_MDC, 0, 0xB0E9u },
+
+// USB CDC config
+#define CFG_TUD_CDC_EP_BUFSIZE  (4096)
+#define CFG_TUD_CDC_RX_BUFSIZE  (4096)
+#define CFG_TUD_CDC_TX_BUFSIZE  (4096)
