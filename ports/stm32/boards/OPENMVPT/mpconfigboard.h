@@ -42,6 +42,9 @@ typedef unsigned int mp_uint_t;     // must be pointer size
 #define MICROPY_HW_SPIFLASH_SOFT_RESET      (1)
 #define MICROPY_HW_ENABLE_INTERNAL_FLASH_STORAGE (0)
 
+#define MICROPY_BOARD_EARLY_INIT board_early_init
+void board_early_init(void);
+
 extern void board_enter_bootloader(void);
 #define MICROPY_BOARD_ENTER_BOOTLOADER(nargs, args) board_enter_bootloader()
 
