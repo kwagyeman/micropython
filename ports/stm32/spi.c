@@ -106,7 +106,7 @@ const spi_t spi_obj[6] = {
 #error "spi_obj needs updating for new value of MICROPY_HW_SUBGHZSPI_ID"
 #endif
 
-#if defined(STM32H5) || defined(STM32H7)
+#if defined(STM32H5) || defined(STM32H7) || defined(STM32N6)
 // STM32H5/H7 HAL requires SPI IRQs to be enabled and handled.
 #if defined(MICROPY_HW_SPI1_SCK)
 void SPI1_IRQHandler(void) {
@@ -234,7 +234,7 @@ int spi_find_index(mp_obj_t id) {
 static uint32_t spi_get_source_freq(SPI_HandleTypeDef *spi) {
     #if defined(STM32F0) || defined(STM32G0)
     return HAL_RCC_GetPCLK1Freq();
-    #elif defined(STM32H5)
+    #elif defined(STM32H5) || defined(STM32N6)
     if (spi->Instance == SPI1) {
         return HAL_RCCEx_GetPeriphCLKFreq(RCC_PERIPHCLK_SPI1);
     } else if (spi->Instance == SPI2) {
@@ -470,7 +470,7 @@ int spi_init(const spi_t *self, bool enable_nss_pin) {
     dma_invalidate_channel(self->tx_dma_descr);
     dma_invalidate_channel(self->rx_dma_descr);
 
-    #if defined(STM32H5) || defined(STM32H7)
+    #if defined(STM32H5) || defined(STM32H7) || defined(STM32N6)
     NVIC_SetPriority(irqn, IRQ_PRI_SPI);
     HAL_NVIC_EnableIRQ(irqn);
     #else
@@ -737,7 +737,7 @@ void spi_print(const mp_print_t *print, const spi_t *spi_obj, bool legacy) {
     if (spi->State != HAL_SPI_STATE_RESET) {
         if (spi->Init.Mode == SPI_MODE_MASTER) {
             // compute baudrate
-            #if defined(STM32H5) || defined(STM32H7)
+            #if defined(STM32H5) || defined(STM32H7) || defined(STM32N6)
             uint log_prescaler = (spi->Init.BaudRatePrescaler >> 28) + 1;
             #else
             uint log_prescaler = (spi->Init.BaudRatePrescaler >> 3) + 1;
