@@ -134,7 +134,7 @@ int main(void) {
         pyexec_frozen_module("_boot.py", false);
 
         // Execute user scripts.
-        int ret = pyexec_file_if_exists("boot.py");
+        int ret = pyexec_file_if_exists("boot.py", true);
         #if MICROPY_HW_ENABLE_USBDEV
         mp_usbd_init();
         #endif
@@ -142,7 +142,7 @@ int main(void) {
             goto soft_reset_exit;
         }
         if (pyexec_mode_kind == PYEXEC_MODE_FRIENDLY_REPL && ret != 0) {
-            ret = pyexec_file_if_exists("main.py");
+            ret = pyexec_file_if_exists("main.py", true);
             if (ret & PYEXEC_FORCED_EXIT) {
                 goto soft_reset_exit;
             }
