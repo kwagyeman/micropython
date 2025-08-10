@@ -1,5 +1,5 @@
 # This board requires a bootloader, either mboot or OpenMV's bootloader.
-USE_MBOOT = 1
+USE_MBOOT ?= 1
 
 MCU_SERIES = n6
 CMSIS_MCU = STM32N657xx
@@ -16,7 +16,7 @@ LD_FILES = boards/OPENMV_N6/board.ld boards/common_n6_flash.ld
 TEXT0_ADDR = 0x70080000
 
 # MicroPython settings
-MICROPY_FLOAT_IMPL = double
+MICROPY_FLOAT_IMPL = float
 MICROPY_PY_BLUETOOTH ?= 1
 MICROPY_BLUETOOTH_NIMBLE ?= 1
 MICROPY_BLUETOOTH_BTSTACK ?= 0
@@ -24,7 +24,7 @@ MICROPY_PY_LWIP ?= 1
 MICROPY_PY_NETWORK_CYW43 ?= 1
 MICROPY_PY_SSL ?= 1
 MICROPY_SSL_MBEDTLS ?= 1
-MICROPY_VFS_LFS2 ?= 1
+MICROPY_VFS_LFS2 ?= 0
 
 # Board specific frozen modules
 FROZEN_MANIFEST ?= $(BOARD_DIR)/manifest.py
