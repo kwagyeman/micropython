@@ -3,7 +3,10 @@
 
 #define MICROPY_GC_STACK_ENTRY_TYPE uint32_t
 #define MICROPY_ALLOC_GC_STACK_SIZE (128)
-#define MICROPY_FATFS_EXFAT         (1)
+
+#define MICROPY_OBJ_REPR            (MICROPY_OBJ_REPR_C)
+typedef int mp_int_t;               // must be pointer size
+typedef unsigned int mp_uint_t;     // must be pointer size
 
 #define MICROPY_HW_ENABLE_INTERNAL_FLASH_STORAGE (0)
 #define MICROPY_HW_HAS_SWITCH       (0)
