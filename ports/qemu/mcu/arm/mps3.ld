@@ -5,29 +5,27 @@
 
 MEMORY
 {
-    RAM : ORIGIN = 0x00000000, LENGTH = 4M
+    ITCM : ORIGIN = 0x00000000, LENGTH = 512K
+    RAM  : ORIGIN = 0x01000000, LENGTH = 2M
 }
 
 _estack = ORIGIN(RAM) + LENGTH(RAM);
 
 SECTIONS
 {
-    .text : {
-        . = ALIGN(4);
+    .isr_vector : {
         KEEP(*(.isr_vector))
+        . = ALIGN(4);
+    } > ITCM
+
+    .text : {
         *(.text*)
         *(.rodata*)
         . = ALIGN(4);
-        _etext = .;
-    } > RAM
-
-    .ARM.exidx : AT ( _etext ) {
-        . = ALIGN(4);
-        __exidx_start = .;
         *(.ARM.exidx*)
-        *(.gnu.linkonce.armexidx.*)
-        __exidx_end = .;
-        _sidata = __exidx_end;
+        . = ALIGN(4);
+        _etext = .;
+        _sidata = _etext;
     } > RAM
 
     .data : AT ( _sidata )

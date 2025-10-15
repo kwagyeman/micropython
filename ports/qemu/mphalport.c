@@ -25,6 +25,7 @@
  */
 
 #include "py/mphal.h"
+#include "py/stream.h"
 #include "shared/runtime/semihosting_arm.h"
 #include "uart.h"
 
@@ -33,7 +34,11 @@
 #define USE_SEMIHOSTING (0)
 
 uintptr_t mp_hal_stdio_poll(uintptr_t poll_flags) {
-    // Not implemented.
+    #if USE_UART
+    if ((poll_flags & MP_STREAM_POLL_RD) && uart_rx_any()) {
+        return MP_STREAM_POLL_RD;
+    }
+    #endif
     return 0;
 }
 
@@ -63,4 +68,40 @@ mp_uint_t mp_hal_stdout_tx_strn(const char *str, size_t len) {
     mp_semihosting_tx_strn(str, len);
     #endif
     return len;
+}
+
+mp_uint_t mp_hal_ticks_ms(void) {
+    #if defined(__ARM_ARCH)
+    extern mp_uint_t systick_ticks_ms(void);
+    return systick_ticks_ms();
+    #else
+    static mp_uint_t ticks_ms = 0;
+    return ticks_ms++;
+    #endif
+}
+
+mp_uint_t mp_hal_ticks_us(void) {
+    #if defined(__ARM_ARCH)
+    extern mp_uint_t systick_ticks_us(void);
+    return systick_ticks_us();
+    #else
+    static mp_uint_t ticks_us = 0;
+    return ticks_us++;
+    #endif
+}
+
+void mp_hal_delay_ms(mp_uint_t ms) {
+    mp_uint_t start = mp_hal_ticks_ms();
+    while (mp_hal_ticks_ms() - start < ms) {
+    }
+}
+
+void mp_hal_delay_us(mp_uint_t us) {
+    mp_uint_t start = mp_hal_ticks_us();
+    while (mp_hal_ticks_us() - start < us) {
+    }
+}
+
+mp_uint_t mp_hal_ticks_cpu(void) {
+    return 0;
 }
