@@ -115,6 +115,7 @@ SRC_O += \
 
 SRC_C = \
 	alif_flash.c \
+	cgu_ext.c \
 	cyw43_port_spi.c \
 	fatfs_port.c \
 	lptimer_ext.c \
