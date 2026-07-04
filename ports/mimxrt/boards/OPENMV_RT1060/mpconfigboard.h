@@ -156,6 +156,8 @@ extern void mimxrt_hal_bootloader(void);
 // Bus      HW-CAN       Logical CAN
 // External FLEXCAN2 ->  0
 
+#define MICROPY_HW_CAN1_NAME "CAN1"
+#define MICROPY_HW_NUM_CAN (1)
 #define MICROPY_HW_CAN_INDEX { 2 }
 #define MICROPY_HW_NUM_CAN_IRQS (1)
 
