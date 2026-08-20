@@ -28,6 +28,29 @@
 // extmod/machine_wdt.c via MICROPY_PY_MACHINE_WDT_INCLUDEFILE.
 
 #include "py/mphal.h"
+// openmv fork-compat: pull in each family's LL-bus header for the WWDG clock enable;
+// the openmv boards don't inherit <fam>_hal_conf_base.h where upstream #19350 added it.
+#if defined(STM32F0)
+#include "stm32f0xx_ll_bus.h"
+#elif defined(STM32F4)
+#include "stm32f4xx_ll_bus.h"
+#elif defined(STM32F7)
+#include "stm32f7xx_ll_bus.h"
+#elif defined(STM32G0)
+#include "stm32g0xx_ll_bus.h"
+#elif defined(STM32G4)
+#include "stm32g4xx_ll_bus.h"
+#elif defined(STM32H5)
+#include "stm32h5xx_ll_bus.h"
+#elif defined(STM32H7)
+#include "stm32h7xx_ll_bus.h"
+#elif defined(STM32L0)
+#include "stm32l0xx_ll_bus.h"
+#elif defined(STM32L1)
+#include "stm32l1xx_ll_bus.h"
+#elif defined(STM32L4)
+#include "stm32l4xx_ll_bus.h"
+#endif
 
 #if defined(STM32H7)
 #define IWDG (IWDG1)
