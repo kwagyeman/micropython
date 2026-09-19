@@ -116,9 +116,10 @@ void board_low_power(int mode);
 #define MICROPY_HW_LED1             (pin_C0) // red
 #define MICROPY_HW_LED2             (pin_C1) // green
 #define MICROPY_HW_LED3             (pin_C2) // blue
-#define MICROPY_HW_LED4             (pin_G3) // white
 #define MICROPY_HW_LED_OTYPE        (GPIO_MODE_OUTPUT_PP)
-// NOTE: LEDs are active low.
+// NOTE: LEDs are active low. The white illuminator on PG3 is NOT: it gates a
+// PMZ390UN N-MOSFET (100K pulldown on the gate), so it is active high and is
+// deliberately left out of the LED table - see the commit message.
 #define MICROPY_HW_LED_ON(pin)      (pin->gpio->BSRR = (pin->pin_mask << 16))
 #define MICROPY_HW_LED_OFF(pin)     (pin->gpio->BSRR = pin->pin_mask)
 
