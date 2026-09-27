@@ -169,6 +169,8 @@
 #define MICROPY_HW_HALOW_MORSE_MICRO_BUSY                   (pyb_pin_P11)
 #define MICROPY_HW_HALOW_MORSE_MICRO_BUSY_INVERTED          (1)             // shield inverts BUSY
 #define MICROPY_HW_HALOW_MORSE_MICRO_SET_MSPLIM             (1)             // mboot leaves MSPLIM set
+#define MICROPY_HW_SPI_POLL_MAX_LEN                         (128)           // poll the HaLow bus's short transfers
+#define MICROPY_HW_HALOW_MORSE_MICRO_SPI_ASYNC              (1)             // background DMA for large HaLow transfers
 #endif
 
 // Bluetooth config
