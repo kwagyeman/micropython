@@ -601,6 +601,16 @@ static HAL_StatusTypeDef spi_wait_dma_finished(const spi_t *spi, uint32_t t_star
     return HAL_OK;
 }
 
+// Transfers up to this length are polled rather than DMA-driven.  Setting up
+// and tearing down a DMA transfer costs several microseconds, more than it
+// takes to clock a short transfer, so a peripheral that does many small
+// transactions (for example an SDIO-over-SPI transceiver) is faster polled.
+// The HAL's polled routines never let TX run more than a FIFO ahead of RX, so
+// this is safe with interrupts enabled.
+#ifndef MICROPY_HW_SPI_POLL_MAX_LEN
+#define MICROPY_HW_SPI_POLL_MAX_LEN (1)
+#endif
+
 void spi_transfer(const spi_t *self, size_t len, const uint8_t *src, uint8_t *dest, uint32_t timeout) {
     // Note: there seems to be a problem sending 1 byte using DMA the first
     // time directly after the SPI/DMA is initialised.  The cause of this is
@@ -614,7 +624,7 @@ void spi_transfer(const spi_t *self, size_t len, const uint8_t *src, uint8_t *de
 
     if (dest == NULL) {
         // send only
-        if (len == 1 || query_irq() == IRQ_STATE_DISABLED) {
+        if (len <= MICROPY_HW_SPI_POLL_MAX_LEN || query_irq() == IRQ_STATE_DISABLED) {
             status = HAL_SPI_Transmit(self->spi, (uint8_t *)src, len, timeout);
         } else {
             DMA_HandleTypeDef tx_dma;
@@ -640,7 +650,7 @@ void spi_transfer(const spi_t *self, size_t len, const uint8_t *src, uint8_t *de
         }
     } else if (src == NULL) {
         // receive only
-        if (len == 1 || query_irq() == IRQ_STATE_DISABLED) {
+        if (len <= MICROPY_HW_SPI_POLL_MAX_LEN || query_irq() == IRQ_STATE_DISABLED) {
             status = HAL_SPI_Receive(self->spi, dest, len, timeout);
         } else {
             DMA_HandleTypeDef tx_dma, rx_dma;
@@ -676,7 +686,7 @@ void spi_transfer(const spi_t *self, size_t len, const uint8_t *src, uint8_t *de
         }
     } else {
         // send and receive
-        if (len == 1 || query_irq() == IRQ_STATE_DISABLED) {
+        if (len <= MICROPY_HW_SPI_POLL_MAX_LEN || query_irq() == IRQ_STATE_DISABLED) {
             status = HAL_SPI_TransmitReceive(self->spi, (uint8_t *)src, dest, len, timeout);
         } else {
             DMA_HandleTypeDef tx_dma, rx_dma;
