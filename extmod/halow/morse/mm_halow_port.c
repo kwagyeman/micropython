@@ -42,6 +42,11 @@
 
 #include "mm_halow.h"
 
+#if MICROPY_HW_HALOW_MORSE_MICRO_SPI_ASYNC
+#include "spi.h"
+#include "dma.h"
+#endif
+
 /*******************************************************************************/
 // SPI bus
 
@@ -64,6 +69,88 @@ void mm_halow_port_spi_init(void) {
     MP_STATE_PORT(mm_halow_spi) =
         MP_OBJ_TYPE_GET_SLOT(&machine_spi_type, make_new)((mp_obj_t)&machine_spi_type, 2, 2, args);
 }
+
+#if MICROPY_HW_HALOW_MORSE_MICRO_SPI_ASYNC
+// Background transfers for the driver's long blocks (stm32): start the DMA and
+// return, and report completion from the SPI end-of-transfer interrupt.  This is
+// the DMA path of spi_transfer() split into a start and a finish.
+
+static DMA_HandleTypeDef mm_halow_tx_dma;
+static DMA_HandleTypeDef mm_halow_rx_dma;
+static volatile bool mm_halow_async_active;
+static uint8_t *mm_halow_async_dest;
+static size_t mm_halow_async_len;
+
+static const spi_t *mm_halow_port_spi_bus(void) {
+    return ((machine_hard_spi_obj_t *)MP_OBJ_TO_PTR(MP_STATE_PORT(mm_halow_spi)))->spi;
+}
+
+static void mm_halow_port_spi_complete(SPI_HandleTypeDef *hspi) {
+    if (mm_halow_async_active && MP_STATE_PORT(mm_halow_spi) != MP_OBJ_NULL &&
+        hspi == mm_halow_port_spi_bus()->spi) {
+        mm_halow_async_active = false;
+        mm_halow_hal_spi_async_done();
+    }
+}
+
+#if !USE_HAL_SPI_REGISTER_CALLBACKS
+// With callback registration disabled the HAL calls these directly.  Nothing
+// else in this port uses them: its own transfers poll the handle's state.
+void HAL_SPI_TxCpltCallback(SPI_HandleTypeDef *hspi) {
+    mm_halow_port_spi_complete(hspi);
+}
+
+void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi) {
+    mm_halow_port_spi_complete(hspi);
+}
+#endif
+
+bool mm_halow_port_spi_transfer_start(size_t len, const uint8_t *src, uint8_t *dest) {
+    if (MP_STATE_PORT(mm_halow_spi) == MP_OBJ_NULL || len > 65535) {
+        return false;
+    }
+    const spi_t *self = mm_halow_port_spi_bus();
+    #if USE_HAL_SPI_REGISTER_CALLBACKS
+    HAL_SPI_RegisterCallback(self->spi, HAL_SPI_TX_COMPLETE_CB_ID, mm_halow_port_spi_complete);
+    HAL_SPI_RegisterCallback(self->spi, HAL_SPI_TX_RX_COMPLETE_CB_ID, mm_halow_port_spi_complete);
+    #endif
+    dma_init(&mm_halow_tx_dma, self->tx_dma_descr, DMA_MEMORY_TO_PERIPH, self->spi);
+    self->spi->hdmatx = &mm_halow_tx_dma;
+    if (dest != NULL) {
+        dma_init(&mm_halow_rx_dma, self->rx_dma_descr, DMA_PERIPH_TO_MEMORY, self->spi);
+        self->spi->hdmarx = &mm_halow_rx_dma;
+        dma_protect_rx_region(dest, len);
+    } else {
+        self->spi->hdmarx = NULL;
+    }
+    MP_HAL_CLEAN_DCACHE(src, len);
+    mm_halow_async_dest = dest;
+    mm_halow_async_len = len;
+    mm_halow_async_active = true;
+    HAL_StatusTypeDef status = dest != NULL ?
+        HAL_SPI_TransmitReceive_DMA(self->spi, (uint8_t *)src, dest, len) :
+        HAL_SPI_Transmit_DMA(self->spi, (uint8_t *)src, len);
+    if (status != HAL_OK) {
+        mm_halow_port_spi_transfer_finish(false);
+        return false;
+    }
+    return true;
+}
+
+void mm_halow_port_spi_transfer_finish(bool completed) {
+    const spi_t *self = mm_halow_port_spi_bus();
+    if (!completed || mm_halow_async_active) {
+        mm_halow_async_active = false;
+        HAL_SPI_Abort(self->spi);
+    }
+    dma_deinit(self->tx_dma_descr);
+    if (mm_halow_async_dest != NULL) {
+        dma_deinit(self->rx_dma_descr);
+        dma_unprotect_rx_region(mm_halow_async_dest, mm_halow_async_len);
+        mm_halow_async_dest = NULL;
+    }
+}
+#endif
 
 void mm_halow_port_spi_deinit(void) {
     MP_STATE_PORT(mm_halow_spi) = MP_OBJ_NULL;
