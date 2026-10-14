@@ -414,23 +414,22 @@ static int mp_spiflash_cache_flush_internal(mp_spiflash_t *self) {
     self->flags &= ~1;
 
     mp_spiflash_cache_t *cache = self->config->cache;
+    uint32_t sector_addr = cache->block * SECTOR_SIZE;
 
     // Erase sector
-    int ret = mp_spiflash_erase_block_internal(self, cache->block * SECTOR_SIZE);
-    if (ret != 0) {
-        return ret;
-    }
+    int ret = mp_spiflash_erase_block_internal(self, sector_addr);
 
     // Write
-    for (int i = 0; i < 16; i += 1) {
-        uint32_t addr = cache->block * SECTOR_SIZE + i * PAGE_SIZE;
-        int ret = mp_spiflash_write_page(self, addr, PAGE_SIZE, cache->buf + i * PAGE_SIZE);
-        if (ret != 0) {
-            return ret;
-        }
+    for (int i = 0; ret == 0 && i < 16; i += 1) {
+        ret = mp_spiflash_write_page(self, sector_addr + i * PAGE_SIZE, PAGE_SIZE, cache->buf + i * PAGE_SIZE);
     }
-    #endif
+
+    // Reads may be memory mapped, so drop anything cached from the old contents.
+    mp_spiflash_notify_modified(self, sector_addr, SECTOR_SIZE);
+    return ret;
+    #else
     return 0;
+    #endif
 }
 
 int mp_spiflash_cache_flush(mp_spiflash_t *self) {
@@ -511,13 +510,19 @@ static int mp_spiflash_cached_write_part(mp_spiflash_t *self, uint32_t addr, siz
     memcpy(cache->buf + offset, src, len);
 
     // Write sector in pages of 256 bytes
-    for (size_t i = 0; i < 16; ++i) {
+    int ret = 0;
+    for (size_t i = 0; ret == 0 && i < 16; ++i) {
         if (dirty & (1 << i)) {
-            int ret = mp_spiflash_write_page(self, addr + i * PAGE_SIZE, PAGE_SIZE, cache->buf + i * PAGE_SIZE);
-            if (ret != 0) {
-                return ret;
-            }
+            ret = mp_spiflash_write_page(self, addr + i * PAGE_SIZE, PAGE_SIZE, cache->buf + i * PAGE_SIZE);
         }
+    }
+
+    if (dirty) {
+        // Reads may be memory mapped, so drop anything cached from the old contents.
+        mp_spiflash_notify_modified(self, addr, SECTOR_SIZE);
+    }
+    if (ret != 0) {
+        return ret;
     }
 
     #endif
